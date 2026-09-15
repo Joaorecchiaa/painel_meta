@@ -97,6 +97,24 @@ SQUADS_PERMITIDOS = {"elite", "sniper", "olympus", "mgm", "navigator"}
 # "Ascensão" na planilha de colaboradores — entra sempre, independente do squad
 PESSOAS_SEMPRE_INCLUIR = {"denise mussolin"}
 
+# Metas compartilhadas: as vendas de todo mundo listado aqui são somadas e
+# aparecem numa única linha no painel, sob o nome/foto da pessoa "principal"
+# (a chave do dicionário). A meta usada é a da pessoa principal — não soma as
+# metas dos dois, só o valor bruto vendido. Ex.: Denise Mussolin e Mylena
+# Oliveira têm a mesma meta de 500k e todas as vendas das duas contam pra
+# essa meta única.
+GRUPOS_META_COMPARTILHADA = {
+    "denise mussolin": ["denise mussolin", "mylena oliveira"],
+}
+NOME_EXIBICAO_GRUPO = {
+    "denise mussolin": "Denise Mussolin / Mylena Oliveira",
+}
+# nomes que só existem "dentro" de um grupo — não devem aparecer como linha própria
+MEMBROS_SECUNDARIOS_GRUPO = {
+    mem for principal, membros in GRUPOS_META_COMPARTILHADA.items()
+    for mem in membros if mem != principal
+}
+
 # Repositório público no GitHub com as fotos do time (arquivos "Nome Sobrenome.ext")
 GITHUB_REPO_FOTOS = os.environ.get("GITHUB_REPO_FOTOS", "negocios87-sketch/fotos_time_comercial")
 _FOTOS_CACHE = None
@@ -356,17 +374,19 @@ def calcular_painel(mes=None, ano=None):
         m for m in metas
         if m["meta_reu"] == 0 and m["meta_fin"] > 0
         and m["nome_norm"] not in EXCLUIR_PESSOAS_CALC
+        and m["nome_norm"] not in MEMBROS_SECUNDARIOS_GRUPO
         and (nome_squad.get(m["nome_norm"], "") in SQUADS_PERMITIDOS or m["nome_norm"] in PESSOAS_SEMPRE_INCLUIR)
     ]
 
     resultado = []
     for m in closers_metas:
-        nn    = m["nome_norm"]
-        bruto = closer_bruto.get(nn, 0.0)
-        meta  = m["meta_fin"]
-        pct   = safe_div(bruto, meta) * 100
+        nn      = m["nome_norm"]
+        membros = GRUPOS_META_COMPARTILHADA.get(nn, [nn])
+        bruto   = sum(closer_bruto.get(mem, 0.0) for mem in membros)
+        meta    = m["meta_fin"]
+        pct     = safe_div(bruto, meta) * 100
         resultado.append({
-            "nome": m["nome"],
+            "nome": NOME_EXIBICAO_GRUPO.get(nn, m["nome"]),
             "bruto": arred(bruto),
             "meta": arred(meta),
             "pct": arred(pct),
