@@ -107,7 +107,7 @@ GRUPOS_META_COMPARTILHADA = {
     "denise mussolin": ["denise mussolin", "mylena oliveira"],
 }
 NOME_EXIBICAO_GRUPO = {
-    "denise mussolin": "Denise Mussolin / Mylena Oliveira",
+    "denise mussolin": "TIME ASCENSÃO",
 }
 # nomes que só existem "dentro" de um grupo — não devem aparecer como linha própria
 MEMBROS_SECUNDARIOS_GRUPO = {
@@ -378,10 +378,6 @@ def calcular_painel(mes=None, ano=None):
         and (nome_squad.get(m["nome_norm"], "") in SQUADS_PERMITIDOS or m["nome_norm"] in PESSOAS_SEMPRE_INCLUIR)
     ]
 
-    # nome "bonito" (com acentos/maiúsculas) de cada pessoa, pra poder exibir o
-    # nome de cada integrante de um grupo mesmo quando ela não tem linha própria
-    nome_original_por_norm = {mt["nome_norm"]: mt["nome"] for mt in metas}
-
     resultado = []
     for m in closers_metas:
         nn      = m["nome_norm"]
@@ -389,17 +385,12 @@ def calcular_painel(mes=None, ano=None):
         bruto   = sum(closer_bruto.get(mem, 0.0) for mem in membros)
         meta    = m["meta_fin"]
         pct     = safe_div(bruto, meta) * 100
-        integrantes = [
-            {"nome": nome_original_por_norm.get(mem, mem.title()), "foto": fotos.get(mem, "")}
-            for mem in membros
-        ]
         resultado.append({
             "nome": NOME_EXIBICAO_GRUPO.get(nn, m["nome"]),
             "bruto": arred(bruto),
             "meta": arred(meta),
             "pct": arred(pct),
-            "foto": fotos.get(nn, ""),
-            "integrantes": integrantes,
+            "foto": fotos.get(nn, ""),  # foto da pessoa "principal" do grupo (nn)
         })
 
     resultado.sort(key=lambda x: x["pct"], reverse=True)
@@ -803,7 +794,7 @@ function ajustarAlturaLinhas(qtd, pesoTotal){
   // estourar (e sem precisar dar zoom out) mesmo com uma linha maior que as outras
   const alturaBruta = (alturaDisponivel - gapPx * (qtd - 1)) / peso;
   // limita entre um mínimo legível e um máximo (pra não ficar gigante com poucos closers)
-  const rowH = Math.max(30, Math.min(96, Math.floor(alturaBruta)));
+  const rowH = Math.max(30, Math.min(112, Math.floor(alturaBruta)));
   document.documentElement.style.setProperty("--rowH", rowH + "px");
   document.documentElement.style.setProperty("--gap", gapPx + "px");
 }
