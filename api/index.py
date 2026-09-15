@@ -765,9 +765,8 @@ function render(data){
     const row = document.createElement("div");
     row.className = "row";
 
-    let nivelAtingido = Math.floor(c.pct / 10) * 10; // só avança ao bater exatamente o nível
-    // quem já vendeu algo (bruto > 0) mas ainda não chegou a 10%, preenche o bloco de 10% mesmo assim
-    if(nivelAtingido === 0 && c.bruto > 0) nivelAtingido = 10;
+    // só avança ao bater exatamente o nível — quem está de 0 a 9,99% não acende bloco nenhum
+    let nivelAtingido = Math.floor(c.pct / 10) * 10;
 
     let blocosHtml = "";
     colunas.forEach(v => {
