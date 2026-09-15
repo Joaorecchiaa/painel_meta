@@ -604,17 +604,19 @@ TEMPLATE = r"""
     flex-shrink:0;
     display:flex;
     flex-direction:column;
-    gap:calc(var(--rowH) * 0.06);
+    align-items:center;
+    gap:calc(var(--rowH) * 0.08);
     animation: avatarFloat 4.5s ease-in-out infinite;
   }
   .avatar-dupla .avatar-mini{
-    width:100%;
-    height:calc(var(--rowH) * 0.36);
+    width:calc(var(--rowH) * 0.42);
+    height:calc(var(--rowH) * 0.42);
     border-radius:50%;
     overflow:hidden;
     background:var(--empty);
     border:1px solid var(--border);
     position:relative;
+    flex-shrink:0;
   }
   .avatar-dupla .avatar-mini img{
     width:100%;
@@ -806,6 +808,7 @@ function render(data){
 
   ULTIMA_QTD = data.closers.length;
   ajustarAlturaLinhas(ULTIMA_QTD);
+  const rowHPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rowH")) || 60;
 
   // nível máximo (colunas) — pelo menos 100, ou o teto de quem estourou a meta
   let maxNivel = 100;
@@ -846,6 +849,9 @@ function render(data){
     const nomeSeguro = escapeHtml(c.nome);
     const delayFoto = (i % 5) * 0.4; // alterna o delay pra não balançar tudo junto
     const integrantes = (c.integrantes && c.integrantes.length > 1) ? c.integrantes : null;
+
+    // bloco com duas fotos fica um pouco mais alto que os demais, pra enquadrar melhor
+    if(integrantes) row.style.setProperty("--rowH", (rowHPx * 1.3) + "px");
 
     let avatarColHtml, nomeColHtml;
     if(integrantes){
