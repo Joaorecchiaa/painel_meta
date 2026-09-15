@@ -851,7 +851,7 @@ function render(data){
     const integrantes = (c.integrantes && c.integrantes.length > 1) ? c.integrantes : null;
 
     // bloco com duas fotos fica um pouco mais alto que os demais, pra enquadrar melhor
-    if(integrantes) row.style.setProperty("--rowH", (rowHPx * 1.3) + "px");
+    if(integrantes) row.style.setProperty("--rowH", (rowHPx * 1.65) + "px");
 
     let avatarColHtml, nomeColHtml;
     if(integrantes){
