@@ -378,6 +378,10 @@ def calcular_painel(mes=None, ano=None):
         and (nome_squad.get(m["nome_norm"], "") in SQUADS_PERMITIDOS or m["nome_norm"] in PESSOAS_SEMPRE_INCLUIR)
     ]
 
+    # nome "bonito" (com acentos/maiúsculas) de cada pessoa, pra poder exibir o
+    # nome de cada integrante de um grupo mesmo quando ela não tem linha própria
+    nome_original_por_norm = {mt["nome_norm"]: mt["nome"] for mt in metas}
+
     resultado = []
     for m in closers_metas:
         nn      = m["nome_norm"]
@@ -385,12 +389,17 @@ def calcular_painel(mes=None, ano=None):
         bruto   = sum(closer_bruto.get(mem, 0.0) for mem in membros)
         meta    = m["meta_fin"]
         pct     = safe_div(bruto, meta) * 100
+        integrantes = [
+            {"nome": nome_original_por_norm.get(mem, mem.title()), "foto": fotos.get(mem, "")}
+            for mem in membros
+        ]
         resultado.append({
             "nome": NOME_EXIBICAO_GRUPO.get(nn, m["nome"]),
             "bruto": arred(bruto),
             "meta": arred(meta),
             "pct": arred(pct),
             "foto": fotos.get(nn, ""),
+            "integrantes": integrantes,
         })
 
     resultado.sort(key=lambda x: x["pct"], reverse=True)
@@ -590,6 +599,32 @@ TEMPLATE = r"""
     color:var(--text-dim);
     background:var(--empty);
   }
+  .avatar-dupla{
+    width:calc(var(--rowH) * 0.78);
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    gap:calc(var(--rowH) * 0.06);
+    animation: avatarFloat 4.5s ease-in-out infinite;
+  }
+  .avatar-dupla .avatar-mini{
+    width:100%;
+    height:calc(var(--rowH) * 0.36);
+    border-radius:50%;
+    overflow:hidden;
+    background:var(--empty);
+    border:1px solid var(--border);
+    position:relative;
+  }
+  .avatar-dupla .avatar-mini img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .avatar-dupla .avatar-fallback{
+    font-size:calc(var(--rowH) * 0.14);
+  }
   .nome-col{
     width:17vw;
     flex-shrink:0;
@@ -602,6 +637,16 @@ TEMPLATE = r"""
     overflow:hidden;
     text-overflow:ellipsis;
     line-height:1.15;
+  }
+  .nome-dupla{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:calc(var(--rowH) * 0.02);
+  }
+  .nome-dupla .nome{
+    font-size:calc(var(--rowH) * 0.22);
+    line-height:1.2;
   }
   .barra{
     flex:1;
@@ -799,17 +844,36 @@ function render(data){
 
     const corPct = corDoBloco(nivelAtingido === 0 ? 10 : nivelAtingido);
     const nomeSeguro = escapeHtml(c.nome);
-    const avatarHtml = c.foto
-      ? `<img src="${c.foto}" alt="${nomeSeguro}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-         <div class="avatar-fallback">${iniciais(c.nome)}</div>`
-      : `<div class="avatar-fallback" style="display:flex">${iniciais(c.nome)}</div>`;
-
     const delayFoto = (i % 5) * 0.4; // alterna o delay pra não balançar tudo junto
+    const integrantes = (c.integrantes && c.integrantes.length > 1) ? c.integrantes : null;
+
+    let avatarColHtml, nomeColHtml;
+    if(integrantes){
+      // duas (ou mais) pessoas dividindo a mesma meta: avatar e nome de cada uma, empilhados
+      avatarColHtml = `<div class="avatar-dupla" style="animation-delay:${delayFoto}s">` +
+        integrantes.map(p => {
+          const nomeP = escapeHtml(p.nome);
+          return p.foto
+            ? `<div class="avatar-mini"><img src="${p.foto}" alt="${nomeP}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div class="avatar-fallback">${iniciais(p.nome)}</div></div>`
+            : `<div class="avatar-mini"><div class="avatar-fallback" style="display:flex">${iniciais(p.nome)}</div></div>`;
+        }).join("") +
+        `</div>`;
+      nomeColHtml = `<div class="nome-dupla">` +
+        integrantes.map(p => `<div class="nome">${escapeHtml(p.nome)}</div>`).join("") +
+        `</div>`;
+    } else {
+      const avatarHtml = c.foto
+        ? `<img src="${c.foto}" alt="${nomeSeguro}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+           <div class="avatar-fallback">${iniciais(c.nome)}</div>`
+        : `<div class="avatar-fallback" style="display:flex">${iniciais(c.nome)}</div>`;
+      avatarColHtml = `<div class="avatar-wrap" style="animation-delay:${delayFoto}s">${avatarHtml}</div>`;
+      nomeColHtml = `<div class="nome">${nomeSeguro}</div>`;
+    }
 
     row.innerHTML = `
-      <div class="avatar-wrap" style="animation-delay:${delayFoto}s">${avatarHtml}</div>
+      ${avatarColHtml}
       <div class="nome-col">
-        <div class="nome">${nomeSeguro}</div>
+        ${nomeColHtml}
       </div>
       <div class="barra">${blocosHtml}</div>
       <div class="pct ${corPct}">${c.pct.toFixed(1).replace('.', ',')}%</div>
