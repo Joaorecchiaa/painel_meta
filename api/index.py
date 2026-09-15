@@ -789,13 +789,19 @@ async function carregar(){
 }
 
 let ULTIMA_QTD = 0;
+let ULTIMO_PESO = 0;
+const FATOR_LINHA_DUPLA = 1.65; // quanto uma linha com 2 fotos (meta compartilhada) vale a mais que uma linha normal
 
-function ajustarAlturaLinhas(qtd){
+function ajustarAlturaLinhas(qtd, pesoTotal){
   const lista = document.getElementById("lista");
   const gapPx = 8; // precisa bater com --gap no CSS
   const alturaDisponivel = lista.clientHeight || (window.innerHeight * 0.7);
   if(qtd <= 0) return;
-  const alturaBruta = (alturaDisponivel - gapPx * (qtd - 1)) / qtd;
+  const peso = pesoTotal || qtd;
+  // "peso" conta linhas com meta compartilhada (2 fotos) como valendo mais de 1,
+  // assim a soma de todas as alturas continua cabendo certinho na tela, sem
+  // estourar (e sem precisar dar zoom out) mesmo com uma linha maior que as outras
+  const alturaBruta = (alturaDisponivel - gapPx * (qtd - 1)) / peso;
   // limita entre um mínimo legível e um máximo (pra não ficar gigante com poucos closers)
   const rowH = Math.max(30, Math.min(96, Math.floor(alturaBruta)));
   document.documentElement.style.setProperty("--rowH", rowH + "px");
@@ -807,7 +813,8 @@ function render(data){
   document.getElementById("atualizado").textContent = `Atualizado às ${data.periodo.atualizado_em}`;
 
   ULTIMA_QTD = data.closers.length;
-  ajustarAlturaLinhas(ULTIMA_QTD);
+  ULTIMO_PESO = data.closers.reduce((soma, c) => soma + ((c.integrantes && c.integrantes.length > 1) ? FATOR_LINHA_DUPLA : 1), 0);
+  ajustarAlturaLinhas(ULTIMA_QTD, ULTIMO_PESO);
   const rowHPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rowH")) || 60;
 
   // nível máximo (colunas) — pelo menos 100, ou o teto de quem estourou a meta
@@ -851,7 +858,7 @@ function render(data){
     const integrantes = (c.integrantes && c.integrantes.length > 1) ? c.integrantes : null;
 
     // bloco com duas fotos fica um pouco mais alto que os demais, pra enquadrar melhor
-    if(integrantes) row.style.setProperty("--rowH", (rowHPx * 1.65) + "px");
+    if(integrantes) row.style.setProperty("--rowH", (rowHPx * FATOR_LINHA_DUPLA) + "px");
 
     let avatarColHtml, nomeColHtml;
     if(integrantes){
@@ -890,7 +897,7 @@ function render(data){
 
 carregar();
 setInterval(carregar, 300000); // atualiza a cada 5 minutos
-window.addEventListener("resize", () => { if(ULTIMA_QTD > 0) ajustarAlturaLinhas(ULTIMA_QTD); });
+window.addEventListener("resize", () => { if(ULTIMA_QTD > 0) ajustarAlturaLinhas(ULTIMA_QTD, ULTIMO_PESO); });
 
 // partículas douradas subindo no fundo (efeito sutil, puramente decorativo)
 (function(){
