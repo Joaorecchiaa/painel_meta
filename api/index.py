@@ -765,8 +765,10 @@ function render(data){
     const row = document.createElement("div");
     row.className = "row";
 
-    // só avança ao bater exatamente o nível — quem está de 0 a 9,99% não acende bloco nenhum
+    // só avança ao bater exatamente o nível de 10 em 10 — exceto o primeiro bloco (10%),
+    // que já acende a partir de 5% (4,99% ou menos não acende nada)
     let nivelAtingido = Math.floor(c.pct / 10) * 10;
+    if(nivelAtingido === 0 && c.pct >= 5) nivelAtingido = 10;
 
     let blocosHtml = "";
     colunas.forEach(v => {
