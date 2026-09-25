@@ -87,7 +87,7 @@ URL_COLAB = os.environ.get(
 )
 
 # Pessoas ignoradas no cálculo (mesma lista do server_17.py)
-EXCLUIR_PESSOAS_CALC = {"priscila ribeiro", "camila cardoso"}
+EXCLUIR_PESSOAS_CALC = {"priscila ribeiro", "camila cardoso", "natalia ferreira"}
 
 # Só entram closers desses funis/squads (time presencial) — "olympus" e "mgm"
 # são o mesmo squad com dois nomes diferentes na planilha, então os dois entram
