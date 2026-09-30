@@ -746,7 +746,7 @@ const MESES = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho",
 function corDoBloco(v){
   if(v <= 60) return "red";
   if(v <= 90) return "yellow";
-  if(v === 100) return "green";
+  if(v <= 110) return "green";
   return "blue";
 }
 
@@ -808,19 +808,17 @@ function render(data){
   ajustarAlturaLinhas(ULTIMA_QTD, ULTIMO_PESO);
   const rowHPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rowH")) || 60;
 
-  // nível máximo (colunas) — pelo menos 100, ou o teto de quem estourou a meta
-  let maxNivel = 100;
-  data.closers.forEach(c => {
-    const nivel = Math.floor(c.pct / 10) * 10;
-    if(nivel > maxNivel) maxNivel = nivel;
-  });
+  // os quadrados ficam travados no máximo de 120% — quem passar disso continua
+  // mostrando o quadrado até 120, mas a % real (à direita) não é travada
+  const NIVEL_MAX_BLOCOS = 120;
   const colunas = [];
-  for(let v = 10; v <= maxNivel; v += 10) colunas.push(v);
+  for(let v = 10; v <= NIVEL_MAX_BLOCOS; v += 10) colunas.push(v);
+  const temEstouro = data.closers.some(c => c.pct > NIVEL_MAX_BLOCOS);
 
   document.getElementById("legenda").innerHTML = `
     <div class="legenda-avatar-spacer"></div>
     <div class="legenda-nome-spacer"></div>
-    <div class="legenda-barra">${colunas.map(v => `<div class="lbl">${v}%</div>`).join("")}</div>
+    <div class="legenda-barra">${colunas.map(v => `<div class="lbl">${(v === NIVEL_MAX_BLOCOS && temEstouro) ? "120%+" : v + "%"}</div>`).join("")}</div>
     <div class="legenda-pct-spacer"></div>
   `;
 
@@ -835,10 +833,12 @@ function render(data){
     // que já acende a partir de 5% (4,99% ou menos não acende nada)
     let nivelAtingido = Math.floor(c.pct / 10) * 10;
     if(nivelAtingido === 0 && c.pct >= 5) nivelAtingido = 10;
+    // os quadrados travam em 120%, mas a cor do texto da % usa o nível real (sem travar)
+    const nivelBlocos = Math.min(nivelAtingido, NIVEL_MAX_BLOCOS);
 
     let blocosHtml = "";
     colunas.forEach(v => {
-      const ligado = nivelAtingido >= v;
+      const ligado = nivelBlocos >= v;
       const cor = ligado ? corDoBloco(v) : "";
       blocosHtml += `<div class="bloco ${ligado ? 'on ' + cor : ''}"></div>`;
     });
